@@ -1,0 +1,235 @@
+# -*- coding: utf-8 -*-
+import urllib
+import urllib2
+import json
+import uuid
+import threading
+import logging
+import urllib
+import urllib2
+logger=logging.getLogger()
+logger.setLevel(logging.DEBUG)
+
+
+
+
+#Main handler
+
+def lambda_handler(event, context):
+    """ Route the incoming request based on type (LaunchRequest, IntentRequest,
+    etc.) The JSON body of the request is provided in the event parameter.
+    """
+    try:
+        
+
+        if event['request']['type'] == "LaunchRequest":
+            return on_launch(event['request'], event['session'])
+        elif event['request']['type'] == "IntentRequest":
+            return on_intent(event['request'], event['session'])
+        elif event['request']['type'] == "SessionEndedRequest":
+            return on_session_ended(event['request'], event['session'])
+    except:
+        
+        logger.debug('event.bot.name={}'.format(event['bot']['name']))
+        return dispatch(event)
+        
+
+def on_session_started(session_started_request, session):
+    """ Called when the session starts """
+
+    print("on_session_started requestId=" + session_started_request['requestId']
+          + ", sessionId=" + session['sessionId'])
+
+
+def on_launch(launch_request, session):
+    """ Called when the user launches the skill without specifying what they
+    want
+    """
+
+    print("on_launch requestId=" + launch_request['requestId'] +
+          ", sessionId=" + session['sessionId'])
+    # Dispatch to your skill's launch
+    return get_welcome_response()
+
+
+def on_intent(intent_request, session):
+    """ Called when the user specifies an intent for this skill """
+
+    print("on_intent requestId=" + intent_request['requestId'] +
+          ", sessionId=" + session['sessionId'])
+
+    intent = intent_request['intent']
+    intent_name = intent_request['intent']['name']
+
+    # Dispatch to your skill's intent handlers
+    if intent_name == "sureIntent":
+        return run_sureIntent(intent, session)
+    elif intent_name == "AMAZON.HelpIntent":
+        return get_welcome_response()
+    elif intent_name == "AMAZON.CancelIntent" or intent_name == "AMAZON.StopIntent":
+        return handle_session_end_request()
+    elif intent_name == "Ravi":
+        return Ravi()
+    elif intent_name == "ObjClrDex":
+        return ObjClrDex()
+    elif intent_name == "Done":
+        return Done()
+    else:
+        raise ValueError("Invalid intent")
+
+
+def on_session_ended(session_ended_request, session):
+    """ Called when the user ends the session.
+
+    Is not called when the skill returns should_end_session=true
+    """
+    print("on_session_ended requestId=" + session_ended_request['requestId'] +
+          ", sessionId=" + session['sessionId'])
+
+def handle_session_end_request():
+    card_title = "Session Ended"
+    speech_output = "Thankyou.. hav a nice day.."
+    # Setting this to true ends the session and exits the skill.
+    should_end_session = True
+    return build_response({}, build_speechlet_response(
+        card_title, speech_output, None, should_end_session))
+
+
+
+
+
+
+
+
+def run_sureIntent(intent, session):
+    session_attributes = {}
+    reprompt_text = None
+    should_end_session = True
+        
+    speech_output = "Thank you James. Nothing more for now. Your next follow up will be after two days.. Good bye and Have a great day.."
+                    
+    return build_response(session_attributes, build_speechlet_response(
+        intent['name'], speech_output, reprompt_text, should_end_session))
+
+
+
+
+
+# --------------- Functions that control the skill's behavior ------------------
+
+def get_welcome_response():
+
+    session_attributes = {}
+    card_title = "Welcome"
+    speech_output = "God's Eye Open . What can I do for you ? "
+    
+    #urllib.request.urlopen('http://python.org/')
+    
+    # If the user either does not reply to the welcome message or says something
+    # that is not understood, they will be prompted again with this text.
+    reprompt_text = "How can i help you"
+    should_end_session = False
+    return build_response(session_attributes, build_speechlet_response(
+        'Welcome', speech_output, reprompt_text, should_end_session))
+        
+def Ravi():
+
+    session_attributes = {}
+    card_title = "Welcome"
+    speech_output = "Checking Ravi"
+    
+    #urllib.request.urlopen('http://python.org/')
+    
+    # If the user either does not reply to the welcome message or says something
+    # that is not understood, they will be prompted again with this text.
+    reprompt_text = "How can i help you"
+    should_end_session = False
+    return build_response(session_attributes, build_speechlet_response(
+        'Welcome', speech_output, reprompt_text, should_end_session))
+    
+def Done():
+
+    session_attributes = {}
+    card_title = "Welcome"
+    speech_output = "Alright , Let me know if you need anything"
+    
+    #urllib.request.urlopen('http://python.org/')
+    
+    # If the user either does not reply to the welcome message or says something
+    # that is not understood, they will be prompted again with this text.
+    reprompt_text = "How can i help you"
+    should_end_session = False
+    return build_response(session_attributes, build_speechlet_response(
+        'Welcome', speech_output, reprompt_text, should_end_session))    
+
+def ObjClrDex():
+
+    session_attributes = {}
+    card_title = "Welcome"
+    #r = requests.post('http://cts-digital-ipm.cloudhub.io/api/v1/salesforce/ticket',headers={'client_id': 'bfb6df74a3f4486db9dbd51bf5764f90','client_secret': 'aeAbCaD530504f07B2F8d50c7EA9EAC9','Content-Type': 'application/json'},body={"ticketName": "Laptop and phone found","ticketDesc": "Found in G3-Building,East camera,9th floor"})
+    # If the user either does not reply to the welcome message or says something
+    # that is not understood, they will be prompted again with this text.
+    data='''[{"ticketName": "ObjClrDex MuleSoft","ticketDesc": "Phone and Laptop detected"}]'''
+    servurl="http://af252351.ngrok.io/"
+    #request = urllib2.Request(servurl)
+    r=urllib2.urlopen(servurl)
+    m = r.read()
+    if m == "cup":
+        muleurl="http://cts-digital-ipm.cloudhub.io/api/v1/salesforce/ticket"
+        request = urllib2.Request(muleurl,data)
+        request.add_header("client_id", "bfb6df74a3f4486db9dbd51bf5764f90")   
+        request.add_header("client_secret", "aeAbCaD530504f07B2F8d50c7EA9EAC9")   
+        request.add_header("Content-Type","application/json")
+        result = urllib2.urlopen(request)
+        ans=result.read()
+        ans=json.loads(ans)
+        #print ans['ticketNumber'][0]
+        fin=ans['ticketNumber'][0]
+        
+        speech_output = m + " found in bottle shelf ."+ "pepsi found in coke shelf . " + "Apple found in mango's . " + "Sending Bots to fix the shelves ." + "Ticket Number in sales force is " + fin + ". Is there anything else i can do for you ? "
+        values={'args':'D1,HIGH'}
+        url='https://api.particle.io/v1/devices/340020001547353236343033/digitalwrite?access_token=2e0642a0d3f7612e66f49cb6fb57bb9556f5fe8f'
+        data = urllib.urlencode(values)
+        req = urllib2.Request(url, data)
+        response = urllib2.urlopen(req)
+    else : 
+        speech_output="You are good ravi"
+    
+    reprompt_text = "How can i help you"
+    should_end_session = False
+    return build_response(session_attributes, build_speechlet_response(
+        'Welcome', speech_output, reprompt_text, should_end_session))
+    
+    
+    
+    
+    
+# --------------- Helpers that build all of the responses ----------------------
+
+def build_speechlet_response(title, output, reprompt_text, should_end_session):
+    return {
+        'outputSpeech': {
+            'type': 'PlainText',
+            'text': output
+        },
+        'card': {
+            'type': 'Simple',
+            'title': 'SessionSpeechlet - ' + title,
+            'content': 'SessionSpeechlet - ' + output
+        },
+        'reprompt': {
+            'outputSpeech': {
+                'type': 'PlainText',
+                'text': reprompt_text
+            }
+        },
+        'shouldEndSession': should_end_session
+    }
+
+
+def build_response(session_attributes, speechlet_response):
+    return {
+        'version': '1.0',
+        'sessionAttributes': session_attributes,
+        'response': speechlet_response
+    }
